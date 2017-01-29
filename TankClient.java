@@ -1,9 +1,15 @@
+/**
+ * version TankWar2.8
+ * change blood move routine is from top to bottom, when the blood is used, randomly re-create in the top part of the window.
+ * when the blood was used, a new blood is created.
+ * move a bug that when the good tank is die, the blood bar rectangle is still there. See Tank draw() method
+ */
 package XC.TankWar;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+
 
 public class TankClient extends Frame{
 	 public static final int GAME_WIDTH = 800;
@@ -14,9 +20,10 @@ public class TankClient extends Frame{
 	 List<Missile> missiles = new ArrayList<>();
 	 List<Explode> explodes = new ArrayList<>();
 	 List<Tank> enemyTanks = new ArrayList<>();
+	 List<Blood> bloods = new ArrayList<>();
 	 Wall w1 = new Wall(500,200,10,150,this);
 	 Wall w2 = new Wall(100,400,200,10,this);
-	 Blood b = new Blood();
+	 Blood b = new Blood(Tank.ran.nextInt(500) + 10, 50, 10, 20, this);
 	 
 	
 	public void paint(Graphics g) {
@@ -24,6 +31,7 @@ public class TankClient extends Frame{
 		g.drawString("Explodes count:" + explodes.size(), 10, 70);
 		g.drawString("Enemytanks count:" + enemyTanks.size(), 10, 90);
 		g.drawString("BloodLeft  count:" + myTank.getLife(), 10, 110);
+		//g.drawString("Bloods count:" + bloods.size(), 10, 130);
 		g.drawString("Round:" + Tank.round, 700, 50);
 		
 		for(int i=0;i<enemyTanks.size();i++){
@@ -43,33 +51,44 @@ public class TankClient extends Frame{
 		    m.draw(g);
 		}
 		for(int i=0;i<explodes.size();i++){
-			Explode e = explodes.get(i);
+			Explode e = explodes.get(i);			
 			e.draw(g);
 		}
 		myTank.draw(g);
 		w1.draw(g);
 		w2.draw(g);
-		b.draw(g);
+		
+		
+		b.draw(g); 
+		for (int i = 0; i < bloods.size(); i++) {
+			Blood bb = bloods.get(i);
+			bb.draw(g);
+			myTank.isBlooded(bb);
+		}	
 		myTank.isBlooded(b);
+		
 		//enemyTank.draw(g);
 		//e.draw(g);
 	}
 	
 	// overriding update(),repaint() method will call update() method which will call paint().
+	// 双缓冲机制，先把图片画到offScreen 上
 	public void update(Graphics g) {
 		if(offScreenImage == null) offScreenImage = this.createImage(GAME_WIDTH, GAME_HEIGHT);
 		Graphics gOffScreen = offScreenImage.getGraphics(); //Graphics for drawing on the off screen image.
 		Color c = gOffScreen.getColor();
 		gOffScreen.setColor(Color.green);
 		gOffScreen.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT); //fill the whole image with background color before paint.
+		
 		gOffScreen.setColor(c);
 		paint(gOffScreen);
 		g.drawImage(offScreenImage, 0, 0, null); 
+		
 	}
 
 	public void launchFrame(){
 		
-		for(int i=0;i<10;i++){
+		for(int i=0;i<5;i++){
 			enemyTanks.add(new Tank(60*(i+1),60,false,Tank.Direction.D, this));			
 		}
 		this.setLocation(400,300);
@@ -95,6 +114,7 @@ public class TankClient extends Frame{
 		
  	}
 	
+	// 用线程控制屏幕刷新,每隔一段时间调用repaint() method to refresh screen.
 	private class PaintThread implements Runnable {
 
 		@Override
@@ -102,14 +122,14 @@ public class TankClient extends Frame{
 			while (true) {
 				repaint();
 				try {
-					Thread.sleep(80);
+					Thread.sleep(60); // the smaller sleep time is, the faster tanks move;
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 	}
-
+	// 事件处理类
 	private class KeyMonitor extends KeyAdapter{
 		@Override
 		public void keyReleased(KeyEvent e) {

@@ -14,13 +14,14 @@ public class Tank {
 	
 	public static final int XSPEED = 5,YSPEED = 5;
 	public static final int WIDTH =30, HEIGHT = 30;
-	public static int round = 5;
+	public static int round = 2; // totally round of games
 	
 	private int x, y;
 	private int oldX,oldY; // store the previous status of the tank
 	private boolean good; // true for our tanks, false for enemy tanks;
 	private boolean live = true; // initialized the tank alive;
 	private int life = 100; 
+	private int numsOfTankToAdd = 5;
 	
 	
 	
@@ -42,14 +43,16 @@ public class Tank {
 	}
 
 	public void draw(Graphics g) {
-		if(good) bb.draw(g);
+		if(good && isLive()) bb.draw(g); // when the good tank is die, the blood will not draw any more
 		if(!live) {
+			
 			if(!good) 
 				tc.enemyTanks.remove(this);
 			return; // if a tank died, then no need to draw it.
 		}
+		// as long as the round is not 0, when the enemy tanks all die, creat new round of enemy tank
 		if(round!=0 && tc.enemyTanks.size() == 0){
-			for(int i=0;i<5;i++){
+			for(int i=0;i<numsOfTankToAdd;i++){
 				tc.enemyTanks.add(new Tank(60*(i+1),ran.nextInt(600) +100,false,Tank.Direction.D, tc));			
 			}
 			round--;
@@ -236,6 +239,7 @@ public class Tank {
 			if(this.live && b.isLive() && this.getRec().intersects(b.getRec())){
 				life = 100;
 				b.setLive(false);
+				tc.bloods.add(new Blood(Tank.ran.nextInt(500) + 10, Tank.ran.nextInt(50), 10, 20, tc));
 				return true;
 			}
 			
@@ -259,7 +263,12 @@ public class Tank {
 	public void setGood(boolean good) {
 		this.good = good;
 	}
-	
+	public int getX(){
+		return this.x;
+	}
+	public int getY(){
+		return this.y;
+	}
 	private class BloodBar{
 		public void draw(Graphics g){
 			Color c = g.getColor();
@@ -271,5 +280,6 @@ public class Tank {
 			g.setColor(c);
 			
 		}
+		
 	}
 }
